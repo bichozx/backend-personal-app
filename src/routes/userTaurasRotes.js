@@ -9,28 +9,18 @@ const { check } = require('express-validator');
 //         usuariosDelete,
 //         usuariosPatch } = require('../controllers/usuarios');
 
-const {  userTaurasDelete, userTaurasPost, userTaurasPut } = require('../controller/userController');
+const {  userTaurasDelete, userTaurasPost, userTaurasPut, userGetTauras } = require('../controller/userController');
 const { validateFields } = require('../middlewares/validate-Fields');
 const { validateJwt } = require('../middlewares/validate-Jwt');
 const { isAdminRole, hasRole } = require('../middlewares/validate-Role');
 const { userExistsById, roleIsValid, emailExists } = require('../helpers/db-Validators');
+const { validateDataUser } = require('../middlewares/validate-UserTauras');
 
 
 
 const router = Router();
 
-// router.get('/', usuariosGet );
-
-router.put('/:id',[
-  (req, res, next) => {
-        console.log('REQ.BODY:', req.body); // <--- Añade esto para debug
-        next();
-    },
-    check('id', 'No es un ID válido').isMongoId(),
-    check('id').custom( userExistsById ),
-    check('rol').custom( roleIsValid ),
-    validateFields
-],userTaurasPut );
+router.get('/', userGetTauras );
 
 router.post(
   '/',
@@ -43,6 +33,7 @@ router.post(
     check('correo').custom( emailExists ),
     // check('rol', 'No es un rol válido').isIn(['ADMIN_ROLE','USER_ROLE']),
     check('rol').custom(roleIsValid),
+    validateDataUser,
     validateFields,
   ],
   userTaurasPost
@@ -56,6 +47,18 @@ router.delete('/:id',[
     check('id').custom( userExistsById ),
     validateFields
 ],userTaurasDelete );
+
+router.put('/:id',[
+  (req, res, next) => {
+        console.log('REQ.BODY:', req.body); 
+        next();
+    },
+    check('id', 'No es un ID válido').isMongoId(),
+    check('id').custom( userExistsById ),
+    check('rol').custom( roleIsValid ),
+    validateDataUser,
+    validateFields
+],userTaurasPut );
 
 // router.patch('/', usuariosPatch );
 

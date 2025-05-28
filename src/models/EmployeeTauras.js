@@ -1,4 +1,6 @@
-const { Schema, model } = require('mongoose');
+
+
+const { Schema, model, Types } = require('mongoose');
 
 const EmployeeTaurasSchema = Schema({
   nombre: {
@@ -11,7 +13,7 @@ const EmployeeTaurasSchema = Schema({
   },
   cedula: {
     type: Number,
-    required: [true, 'La cedula es obligatorio'],
+    required: [true, 'La cedula es obligatoria'],
     unique: true,
   },
   correo: {
@@ -29,7 +31,7 @@ const EmployeeTaurasSchema = Schema({
   },
   direccion: {
     type: String,
-    required: [true, 'La direccion es obligatorio'],
+    required: [true, 'La direccion es obligatoria'],
   },
   salario: {
     type: String,
@@ -49,23 +51,35 @@ const EmployeeTaurasSchema = Schema({
   },
   duracionContratoDias: {
     type: Number,
-    default: null, // Si no se usa, calcula en meses como siempre
+    default: null,
   },
-
   estado: {
     type: Boolean,
     default: true,
   },
+
+  eliminadoPor: {
+    type: Types.ObjectId,        // Referencia al usuario que elimina
+    ref: 'User',
+    default: null,
+  },
+  fechaEliminacion: {
+    type: Date,
+    default: null,
+  },
+
   createdAt: {
     type: Date,
     default: Date.now,
+    
   },
 });
 
+// Para no enviar __v y renombrar _id a uid
 EmployeeTaurasSchema.methods.toJSON = function () {
-  const { __v, nombre, _id, ...EmployeeTaurasSchema } = this.toObject();
-  EmployeeTaurasSchema.uid = _id;
-  return EmployeeTaurasSchema;
+  const { __v, _id, ...employee } = this.toObject();
+  employee.uid = _id;
+  return employee;
 };
 
 module.exports = model('EmployeeTauras', EmployeeTaurasSchema);

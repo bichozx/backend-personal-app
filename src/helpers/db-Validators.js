@@ -1,6 +1,7 @@
 const Role = require('../models/Role');
 
 const User = require('../models/User');
+const EmployeeTauras  = require('../models/EmployeeTauras')
 
 const roleIsValid = async(rol = '') => {
 
@@ -16,6 +17,23 @@ const emailExists = async( correo = '' ) => {
     const existeEmail = await User.findOne({ correo });
     if ( existeEmail ) {
         throw new Error(`El correo: ${ correo }, ya está registrado`);
+    }
+}
+const emailEmployeeExists= async( correo = '' ) => {
+
+    // Verificar si el correo existe
+    const emailEmployee = await EmployeeTauras.findOne({ correo });
+    if ( emailEmployee ) {
+        throw new Error(`El correo: ${ correo }, ya está registrado`);
+    }
+}
+
+const idCardExists = async( cedula = '' ) => {
+
+    // Verificar si el correo existe
+    const existId = await EmployeeTauras.findOne({ cedula: Number(cedula) });
+    if ( existId ) {
+        throw new Error(`la cedula: ${ cedula }, ya está registrado`);
     }
 }
 
@@ -54,9 +72,11 @@ const userExistsById = async( id ) => {
 
 
 module.exports = {
+    emailEmployeeExists,
     roleIsValid,
     emailExists,
     userExistsById,
+    idCardExists
     
 }
 
