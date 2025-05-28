@@ -9,8 +9,8 @@ const { checkContractExpirations } = require('../helpers/reviewContracts');
 // });
 
 // Ejecutar cada minuto
-cron.schedule('* * * * *', async () => {
-  console.log('Ejecutando revisión de contratos...');
-  await checkContractExpirations();
-});
+// cron.schedule('* * * * *', async () => {
+//   console.log('Ejecutando revisión de contratos...');
+//   await checkContractExpirations();
+// });
 

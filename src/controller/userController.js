@@ -3,7 +3,7 @@ const bcryptjs = require('bcryptjs');
 
 const Usertauras = require('../models/User');
 
-const userTaurasPost = async (req, res = response) => {
+const userTaurasPost = async (req = request, res = response) => {
   const { nombre, correo, password, rol } = req.body;
   const userTauras = new Usertauras({ nombre, correo, password, rol });
 
@@ -19,23 +19,25 @@ const userTaurasPost = async (req, res = response) => {
   });
 };
 
-// const userTaurasPut = async(req, res = response) => {
+const userTaurasPut = async(req= request, res = response) => {
 
-//     const { id } = req.params;
-//     const { _id, password, google, correo, ...resto } = req.body;
+    const { id } = req.params;
+    
+    const { _id, password, google, correo, ...resto } = req.body;
 
-//     if ( password ) {
-//         // Encriptar la contraseña
-//         const salt = bcryptjs.genSaltSync();
-//         resto.password = bcryptjs.hashSync( password, salt );
-//     }
+    if ( password ) {
+        // Encriptar la contraseña
+        const salt = bcryptjs.genSaltSync();
+        resto.password = bcryptjs.hashSync( password, salt );
+    }
 
-//     const usuario = await Usuario.findByIdAndUpdate( id, resto );
+    const userTaurasUpdate = await Usertauras.findByIdAndUpdate( id, resto );
 
-//     res.json(usuario);
-// }
-
-
+    res.json({
+      msg: 'put Api',
+      id,
+      userTaurasUpdate});
+}
 
 const userTaurasDelete = async (req = request, res = response) => {
   const { id } = req.params;
@@ -46,7 +48,7 @@ const userTaurasDelete = async (req = request, res = response) => {
     {
       estado: false,
       eliminadoPor: admin._id,
-      fechaEliminacion: new Date()
+      fechaEliminacion: new Date(),
     },
     { new: true }
   );
@@ -56,14 +58,15 @@ const userTaurasDelete = async (req = request, res = response) => {
     eliminadoPor: {
       id: admin._id,
       nombre: admin.nombre,
-      correo: admin.correo
+      correo: admin.correo,
     },
     fechaEliminacion: user.fechaEliminacion,
-    usuarioDesactivado: user
+    usuarioDesactivado: user,
   });
 };
 
 module.exports = {
   userTaurasPost,
   userTaurasDelete,
+  userTaurasPut
 };
