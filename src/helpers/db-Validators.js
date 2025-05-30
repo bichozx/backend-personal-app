@@ -46,6 +46,15 @@ const userExistsById = async( id ) => {
     }
 }
 
+const employeExistsById = async( id ) => {
+
+    // Verificar si el correo existe
+    const existsEmploye = await EmployeeTauras.findById(id);
+    if ( !existsEmploye ) {
+        throw new Error(`El id no existe ${ id }`);
+    }
+}
+
 /**
  * Categorias
  */
@@ -73,6 +82,7 @@ const userExistsById = async( id ) => {
 
 module.exports = {
     emailEmployeeExists,
+    employeExistsById,
     roleIsValid,
     emailExists,
     userExistsById,

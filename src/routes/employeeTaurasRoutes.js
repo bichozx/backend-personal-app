@@ -1,31 +1,67 @@
-const express = require("express");
-const { check } = require("express-validator");
+const express = require('express');
+const { check } = require('express-validator');
 
-const { employeeTaurasPost } = require('../controller/employeeController');
-const { idCardExists,  emailEmployeeExists } = require('../helpers/db-Validators');
+const {
+  employeeTaurasPost,
+  deleteEmployeeTauras,
+  employeeGetTauras,
+  employeeTaurasPut,
+} = require('../controller/employeeController');
+const {
+  idCardExists,
+  emailEmployeeExists,
+  employeExistsById,
+  roleIsValid,
+} = require('../helpers/db-Validators');
 const { validateFields } = require('../middlewares/validate-Fields');
-
+const { validateJwt } = require('../middlewares/validate-Jwt');
+const { isAdminRole, hasRole } = require('../middlewares/validate-Role');
 
 const router = express.Router();
 
+router.get('/', employeeGetTauras);
+
 router.post(
-  "/create",
+  '/create',
   [
-    check("cedula", "El número de cédula es obligatorio").not().isEmpty(),
-    check("cedula").custom(idCardExists),
-    check("nombre", "El nombre es obligatorio").not().isEmpty(),
-    check("apellido", "El apellido es obligatorio").not().isEmpty(),
+    check('cedula', 'El número de cédula es obligatorio').not().isEmpty(),
+    check('cedula').custom(idCardExists),
+    check('nombre', 'El nombre es obligatorio').not().isEmpty(),
+    check('apellido', 'El apellido es obligatorio').not().isEmpty(),
     check('correo').custom(emailEmployeeExists),
-    check("correo", "El correo electrónico no es válido").isEmail(),
-    
-    check("cargo", "El cargo es obligatorio").not().isEmpty(),
-    check("salario", "El salario debe ser un número válido").isNumeric(),
-    check("tipoContrato", "El tipo de contrato es obligatorio").not().isEmpty(),
+    check('correo', 'El correo electrónico no es válido').isEmail(),
+
+    check('cargo', 'El cargo es obligatorio').not().isEmpty(),
+    check('salario', 'El salario debe ser un número válido').isNumeric(),
+    check('tipoContrato', 'El tipo de contrato es obligatorio').not().isEmpty(),
     validateFields,
   ],
   employeeTaurasPost
-  
-  
+);
+
+router.put('/:id',[
+  (req, res, next) => {
+        console.log('REQ.BODY:', req.body); 
+        next();
+    },
+    validateJwt,
+    isAdminRole,
+    check('id', 'No es un ID válido').isMongoId(),
+    check('id').custom( employeExistsById ),
+    validateFields
+],employeeTaurasPut );
+
+router.delete(
+  '/:id',
+  [
+    validateJwt,
+    isAdminRole,
+    hasRole('ADMIN_ROLE', 'VENTAR_ROLE', 'OTRO_ROLE'),
+    check('id', 'No es un ID válido').isMongoId(),
+    check('id').custom(employeExistsById),
+    validateFields,
+  ],
+  deleteEmployeeTauras
 );
 
 module.exports = router;
