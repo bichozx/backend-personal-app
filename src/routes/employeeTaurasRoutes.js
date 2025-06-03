@@ -6,6 +6,9 @@ const {
   deleteEmployeeTauras,
   employeeGetTauras,
   employeeTaurasPut,
+  downloadRetirementZip,
+  downloadHiringZip,
+  downloadFormatosGenerales,
 } = require('../controller/employeeController');
 const {
   idCardExists,
@@ -20,6 +23,16 @@ const { isAdminRole, hasRole } = require('../middlewares/validate-Role');
 const router = express.Router();
 
 router.get('/', employeeGetTauras);
+
+// 🆕 Nueva ruta para descargar el zip de retiro
+router.get('/download-retiro/:cedula', downloadRetirementZip);
+
+router.get('/download-contratos/:cedula', downloadHiringZip);
+
+router.get('/download-formatos', downloadFormatosGenerales);
+
+
+
 
 router.post(
   '/create',

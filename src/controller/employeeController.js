@@ -1,9 +1,13 @@
 const { response, request } = require('express');
 const path = require('path');
 
+const fs = require('fs');
+
 const EmployeeTauras = require('../models/EmployeeTauras');
 const generateContract = require('../services/contractGenerator');
 const generateDocx = require('../services/contractGenerator');
+const generateRetirementDocs = require('../services/generateRetirementDocs');
+const {zipRetirementDocs, zipHiringDocs, zipDescargables} = require('../services/zipService');
 
 // const employeeGetTauras = async (req = request, res = response) => {
 //   const { limite = 5, desde = 0 } = req.query;
@@ -77,6 +81,25 @@ const employeeGetTauras = async (req = request, res = response) => {
   res.json({
     total,
     employeeTauras,
+  });
+};
+
+const downloadRetirementZip = (req, res = response) => {
+  const { cedula } = req.params;
+
+  const zipPath = path.resolve(__dirname, `../outputs/${cedula}/retiro_${cedula}.zip`);
+
+  if (!fs.existsSync(zipPath)) {
+    return res.status(404).json({
+      msg: 'Archivo ZIP no encontrado. Asegúrate de que se haya generado al eliminar el empleado.',
+    });
+  }
+
+  res.download(zipPath, `documentos_retiro_${cedula}.zip`, (err) => {
+    if (err) {
+      console.error('Error al enviar el archivo:', err.message);
+      res.status(500).json({ msg: 'Error al descargar el archivo' });
+    }
   });
 };
 
@@ -282,6 +305,17 @@ const deleteEmployeeTauras = async (req = request, res = response) => {
     });
   }
 
+   // ✅ Generar documentos de retiro
+  const docsRetiro = generateRetirementDocs(employee);
+
+   // ✅ Comprimir en ZIP
+  let zipPath = '';
+  try {
+    zipPath = await zipRetirementDocs(employee.cedula.toString());
+  } catch (error) {
+    console.error('Error al generar el ZIP:', error.message);
+  }
+
   res.json({
     msg: 'Usuario desactivado correctamente',
     eliminadoPor: {
@@ -291,7 +325,53 @@ const deleteEmployeeTauras = async (req = request, res = response) => {
     },
     fechaEliminacion: employee.fechaEliminacion,
     usuarioDesactivado: employee,
+    documentosRetiro: docsRetiro,
+    zipRetiro: zipPath,
   });
+};
+
+const downloadHiringZip = async (req, res = response) => {
+  const { cedula } = req.params;
+
+  try {
+    const zipPath = await zipHiringDocs(cedula);
+
+    if (!fs.existsSync(zipPath)) {
+      return res.status(404).json({ msg: 'No se encontró el archivo .zip de contratación' });
+    }
+
+    res.download(zipPath, `documentos_contratacion_${cedula}.zip`, (err) => {
+      if (err) {
+        console.error('Error al descargar:', err.message);
+        res.status(500).json({ msg: 'Error al descargar el archivo' });
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al generar ZIP de contratación:', error.message);
+    res.status(500).json({ msg: 'Error al generar el archivo ZIP', error: error.message });
+  }
+};
+
+const downloadFormatosGenerales = async (req, res = response) => {
+  try {
+    const zipPath = await zipDescargables();
+
+    if (!fs.existsSync(zipPath)) {
+      return res.status(404).json({ msg: 'No se encontró el archivo .zip de formatos' });
+    }
+
+    res.download(zipPath, 'formatos_descargables.zip', (err) => {
+      if (err) {
+        console.error('Error al descargar los formatos:', err.message);
+        res.status(500).json({ msg: 'Error al descargar los archivos' });
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al generar ZIP de formatos:', error.message);
+    res.status(500).json({ msg: 'Error al generar el archivo ZIP', error: error.message });
+  }
 };
 
 module.exports = {
@@ -299,4 +379,7 @@ module.exports = {
   employeeTaurasPost,
   employeeTaurasPut,
   deleteEmployeeTauras,
+  downloadRetirementZip,
+  downloadHiringZip,
+  downloadFormatosGenerales
 };
