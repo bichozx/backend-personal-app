@@ -16,6 +16,11 @@ const EmployeeTaurasSchema = Schema({
     required: [true, 'La cedula es obligatoria'],
     unique: true,
   },
+  lugarDeExpedicion: {
+    type: String,
+    required: [true, 'La cedula es obligatoria'],
+    unique: true,
+  },
   correo: {
     type: String,
     required: [true, 'El correo es obligatorio'],
