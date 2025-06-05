@@ -9,6 +9,7 @@ const {
   downloadRetirementZip,
   downloadHiringZip,
   downloadFormatosGenerales,
+  employeeTaurasById,
 } = require('../controller/employeeController');
 const {
   idCardExists,
@@ -23,6 +24,8 @@ const { isAdminRole, hasRole } = require('../middlewares/validate-Role');
 const router = express.Router();
 
 router.get('/', employeeGetTauras);
+
+router.get('/:id', employeeTaurasById);
 
 // 🆕 Nueva ruta para descargar el zip de retiro
 router.get('/download-retiro/:cedula', downloadRetirementZip);

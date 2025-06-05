@@ -84,6 +84,24 @@ const employeeGetTauras = async (req = request, res = response) => {
   });
 };
 
+const employeeTaurasById = async (req = request, res = response) => {
+  const { id } = req.params;
+
+  try {
+    const employee = await EmployeeTauras.findById(id);
+
+    if (!employee || !employee.estado) {
+      return res.status(404).json({ msg: 'Empleado no encontrado o desactivado' });
+    }
+
+    res.json(employee);
+  } catch (error) {
+    console.error('Error al buscar empleado por ID:', error);
+    res.status(500).json({ msg: 'Error al buscar el empleado', error: error.message });
+  }
+};
+
+
 const downloadRetirementZip = (req, res = response) => {
   const { cedula } = req.params;
 
@@ -376,6 +394,7 @@ const downloadFormatosGenerales = async (req, res = response) => {
 
 module.exports = {
   employeeGetTauras,
+  employeeTaurasById,
   employeeTaurasPost,
   employeeTaurasPut,
   deleteEmployeeTauras,
