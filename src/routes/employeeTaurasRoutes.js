@@ -25,7 +25,9 @@ const router = express.Router();
 
 router.get('/', employeeGetTauras);
 
-router.get('/:id', employeeTaurasById);
+router.get('/:id',[
+  check('id', 'No es un ID válido').isMongoId(),
+], employeeTaurasById);
 
 // 🆕 Nueva ruta para descargar el zip de retiro
 router.get('/download-retiro/:cedula', downloadRetirementZip);
