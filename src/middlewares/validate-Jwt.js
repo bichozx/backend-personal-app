@@ -7,6 +7,14 @@ const UserTauras = require('../models/User');
 const validateJwt= async( req = request, res = response, next ) => {
 
     const token = req.header('x-token');
+    console.log('Token recibido:', token);
+
+    if (!token) {
+    const authHeader = req.header('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1]; // Extrae solo el token
+    }
+  }
 
     if ( !token ) {
         return res.status(401).json({

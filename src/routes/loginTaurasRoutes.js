@@ -4,7 +4,9 @@ const { check } = require('express-validator');
 
 
 const { validateFields } = require('../middlewares/validate-Fields');
-const { googleSignin, login } = require('../controller/auth');
+const { googleSignin, login, refreshToken } = require('../controller/auth');
+const { validateJwt } = require('../middlewares/validate-Jwt');
+
 
 
 const router = Router();
@@ -19,6 +21,9 @@ router.post('/google',[
     check('id_token', 'El id_token es necesario').not().isEmpty(),
     validateFields
 ], googleSignin );
+
+//Para renovar el token
+router.post('/refresh', [validateJwt], refreshToken);
 
 
 

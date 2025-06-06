@@ -3,7 +3,6 @@ const bcryptjs = require('bcryptjs');
 
 const UserTauras = require('../models/User');
 
-
 const { triggerJWT } = require('../helpers/triggerJwt');
 const { googleVerify } = require('../helpers/googleVerify');
 
@@ -35,7 +34,7 @@ const login = async (req, res = response) => {
     }
 
     // Generar el JWT
-    const token = await triggerJWT(userTauras.id);
+    const token = await triggerJWT(userTauras.id, userTauras.rol);
 
     res.json({
       userTauras,
@@ -92,7 +91,24 @@ const googleSignin = async (req, res = response) => {
   }
 };
 
+const refreshToken = async (req, res = response) => {
+  try {
+    const user = req.userTauras;                    // viene del middleware
+    const newToken = await triggerJWT(user._id, user.rol);
+
+    return res.json({
+      token: newToken,
+      rol: user.rol,
+      uid: user._id,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ msg: 'No se pudo renovar el token' });
+  }
+};
+
 module.exports = {
   login,
   googleSignin,
+  refreshToken,
 };
