@@ -11,7 +11,8 @@ const generateRetirementDocs = (empleado) => {
     cedula: empleado.cedula,
     cargo: empleado.cargo,
     correo: empleado.correo,
-    //fechaEliminacion: new Date().toLocaleDateString('es-CO'),
+    fechaInicio: new Date(empleado.createdAt ?? new Date()).toLocaleDateString('es-CO'),
+    fechaEliminacion: new Date().toLocaleDateString('es-CO'),
     salario: empleado.salario,
   };
 

@@ -1,42 +1,4 @@
-// const Employee = require('../models/EmployeeTauras'); // Asegúrate del nombre correcto del modelo
-// const { saveNotification } = require('../services/notificationServices');
 
-// // const { sendWhatsAppMessage } = require('../services/whatsappService');
-
-// const DAYS_BEFORE_ALERT = 2;
-
-// const checkContractExpirations = async () => {
-//   const now = new Date();
-
-//   // Buscar empleados con contrato fijo
-//   const employees = await Employee.find({ tipoContrato: 'Fijo' });
-
-//   for (const emp of employees) {
-//     const expirationDate = new Date(emp.createdAt);
-//     expirationDate.setMonth(expirationDate.getMonth() + emp.duracionContratoMeses);
-
-//     const diffTime = expirationDate - now;
-//     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-//     if (diffDays === DAYS_BEFORE_ALERT) {
-//       const message = `El contrato de ${emp.nombre} ${emp.apellido} está próximo a vencer en ${diffDays} días.`;
-
-//       // Guardar notificación
-//       await saveNotification({
-//         empleadoId: emp._id,
-//         mensaje: message,
-//         fecha: new Date(),
-//       });
-
-//       // Enviar WhatsApp si lo deseas
-//       // await sendWhatsAppMessage(emp.telefono, message); // Asegúrate que tengas un campo de teléfono
-//     }
-//   }
-// };
-
-// module.exports = {
-//   checkContractExpirations
-// };
 
 const Employee = require('../models/EmployeeTauras'); // Asegúrate del nombre correcto del modelo
 const { saveNotification } = require('../services/notificationServices');

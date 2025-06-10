@@ -72,12 +72,16 @@ const EmployeeTaurasSchema = Schema({
     type: Date,
     default: null,
   },
+  descripcion:{
+    type:String,
+    default: null,
+  },
 
   createdAt: {
-    type: Date,
-    default: Date.now,
-    
-  },
+  type: Date,
+  required: true,
+  default: () => new Date(),
+},
 });
 
 // Para no enviar __v y renombrar _id a uid

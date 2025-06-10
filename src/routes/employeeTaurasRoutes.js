@@ -10,6 +10,7 @@ const {
   downloadHiringZip,
   downloadFormatosGenerales,
   employeeTaurasById,
+  employeeGetRetiredTauras,
 } = require('../controller/employeeController');
 const {
   idCardExists,
@@ -25,9 +26,7 @@ const router = express.Router();
 
 router.get('/', employeeGetTauras);
 
-router.get('/:id',[
-  check('id', 'No es un ID válido').isMongoId(),
-], employeeTaurasById);
+router.get('/retired', employeeGetRetiredTauras);
 
 // 🆕 Nueva ruta para descargar el zip de retiro
 router.get('/download-retiro/:cedula', downloadRetirementZip);
@@ -35,8 +34,6 @@ router.get('/download-retiro/:cedula', downloadRetirementZip);
 router.get('/download-contratos/:cedula', downloadHiringZip);
 
 router.get('/download-formatos', downloadFormatosGenerales);
-
-
 
 
 router.post(
@@ -57,6 +54,10 @@ router.post(
   employeeTaurasPost
 );
 
+router.get('/:id',[
+  check('id', 'No es un ID válido').isMongoId(),
+], employeeTaurasById);
+
 router.put('/:id',[
   (req, res, next) => {
         console.log('REQ.BODY:', req.body); 
@@ -70,7 +71,7 @@ router.put('/:id',[
 ],employeeTaurasPut );
 
 router.delete(
-  '/:id',
+  '/remove/:id',
   [
     validateJwt,
     isAdminRole,

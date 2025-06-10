@@ -4,74 +4,33 @@ const path = require('path');
 const fs = require('fs');
 
 const EmployeeTauras = require('../models/EmployeeTauras');
-const generateContract = require('../services/contractGenerator');
+
 const generateDocx = require('../services/contractGenerator');
 const generateRetirementDocs = require('../services/generateRetirementDocs');
-const {zipRetirementDocs, zipHiringDocs, zipDescargables} = require('../services/zipService');
-
-// const employeeGetTauras = async (req = request, res = response) => {
-//   const { limite = 5, desde = 0 } = req.query;
-//   const query = { estado: true };
-
-//   const [total, employeeTauras] = await Promise.all([
-//     EmployeeTauras.countDocuments(query),
-//     EmployeeTauras.find(query).skip(Number(desde)).limit(Number(limite)),
-//   ]);
-
-//   res.json({
-//     total,
-//     employeeTauras,
-//   });
-// };
-
-// const employeeTaurasPost = async (req = request, res = response) => {
-//   try {
-//     const {
-//       nombre,
-//       apellido,
-//       cedula,
-//       correo,
-//       cargo,
-//       celular,
-//       direccion,
-//       salario,
-//       tipoContrato,
-//       duracionContratoMeses
-//     } = req.body;
-
-//     const employeeTauras = new EmployeeTauras({
-//       nombre,
-//       apellido,
-//       cedula,
-//       correo,
-//       cargo,
-//       celular,
-//       direccion,
-//       salario,
-//       tipoContrato,
-//       duracionContratoMeses,
-//     });
-
-//     await employeeTauras.save();
-
-//     res.status(201).json({
-//       msg: 'Empleado registrado correctamente',
-//       employeeTauras,
-//     });
-
-//   } catch (error) {
-//     console.error(error);
-
-//     res.status(400).json({
-//       msg: 'No se pudo registrar el empleado',
-//       error: error.message || error,
-//     });
-//   }
-//};
+const {
+  zipRetirementDocs,
+  zipHiringDocs,
+  zipDescargables,
+} = require('../services/zipService');
 
 const employeeGetTauras = async (req = request, res = response) => {
   const { limite = 5, desde = 0 } = req.query;
   const query = { estado: true };
+
+  const [total, employeeTauras] = await Promise.all([
+    EmployeeTauras.countDocuments(query),
+    EmployeeTauras.find(query).skip(Number(desde)).limit(Number(limite)),
+  ]);
+
+  res.json({
+    total,
+    employeeTauras,
+  });
+};
+
+const employeeGetRetiredTauras = async (req = request, res = response) => {
+  const { limite = 5, desde = 0 } = req.query;
+  const query = { estado: false };
 
   const [total, employeeTauras] = await Promise.all([
     EmployeeTauras.countDocuments(query),
@@ -91,21 +50,27 @@ const employeeTaurasById = async (req = request, res = response) => {
     const employee = await EmployeeTauras.findById(id);
 
     if (!employee || !employee.estado) {
-      return res.status(404).json({ msg: 'Empleado no encontrado o desactivado' });
+      return res
+        .status(404)
+        .json({ msg: 'Empleado no encontrado o desactivado' });
     }
 
     res.json(employee);
   } catch (error) {
     console.error('Error al buscar empleado por ID:', error);
-    res.status(500).json({ msg: 'Error al buscar el empleado', error: error.message });
+    res
+      .status(500)
+      .json({ msg: 'Error al buscar el empleado', error: error.message });
   }
 };
-
 
 const downloadRetirementZip = (req, res = response) => {
   const { cedula } = req.params;
 
-  const zipPath = path.resolve(__dirname, `../outputs/${cedula}/retiro_${cedula}.zip`);
+  const zipPath = path.resolve(
+    __dirname,
+    `../outputs/${cedula}/retiro_${cedula}.zip`
+  );
 
   if (!fs.existsSync(zipPath)) {
     return res.status(404).json({
@@ -121,79 +86,6 @@ const downloadRetirementZip = (req, res = response) => {
   });
 };
 
-// const employeeTaurasPost = async (req = request, res = response) => {
-//   try {
-//     const {
-//       nombre,
-//       apellido,
-//       cedula,
-//       lugarDeExpedicion,
-//       correo,
-//       cargo,
-//       celular,
-//       direccion,
-//       salario,
-//       tipoContrato,
-//       createdAt,
-//       duracionContratoMeses,
-//     } = req.body;
-
-//     // Usa fecha actual si no viene una
-//     const fechaInicio = createdAt ? new Date(createdAt) : new Date();
-
-//     // Calcular fecha final
-//     const fechaFinal = new Date(fechaInicio);
-//     fechaFinal.setMonth(
-//       fechaFinal.getMonth() + (Number(duracionContratoMeses) || 2)
-//     );
-
-//     const employeeTauras = new EmployeeTauras({
-//       nombre,
-//       apellido,
-//       cedula,
-//       lugarDeExpedicion,
-//       correo,
-//       cargo,
-//       celular,
-//       direccion,
-//       salario,
-//       tipoContrato,
-//       createdAt: fechaInicio,
-//       duracionContratoMeses,
-//     });
-
-//     await employeeTauras.save();
-
-//     // Generar contrato automáticamente
-//     const contratoPath = generateContract({
-//       nombre,
-//       apellido,
-//       cedula,
-//       lugarDeExpedicion,
-//       correo,
-//       celular,
-//       cargo,
-//       direccion,
-//       salario,
-//       tipoContrato,
-//       fechaInicio: fechaInicio.toLocaleDateString('es-CO'),
-//       fechaFinal: fechaFinal.toLocaleDateString('es-CO'),
-//     });
-
-//     res.status(201).json({
-//       msg: 'Empleado creado y contrato generado',
-//       empleado: employeeTauras,
-//       contratoGenerado: contratoPath,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(400).json({
-//       msg: 'No se pudo registrar el empleado',
-//       error: error.message,
-//     });
-//   }
-// };
-
 const employeeTaurasPost = async (req = request, res = response) => {
   try {
     const {
@@ -208,6 +100,8 @@ const employeeTaurasPost = async (req = request, res = response) => {
       salario,
       tipoContrato,
       createdAt,
+      fechaEliminacion,
+      descripcion,
       duracionContratoMeses,
     } = req.body;
 
@@ -228,8 +122,12 @@ const employeeTaurasPost = async (req = request, res = response) => {
       direccion,
       salario,
       tipoContrato,
+      duracionContratoMeses,
+      createdAt,
+      fechaEliminacion,
       fechaInicio: fechaInicio.toLocaleDateString('es-CO'),
       fechaFinal: fechaFinal.toLocaleDateString('es-CO'),
+      descripcion,
     };
 
     const newEmpleado = new EmployeeTauras({
@@ -244,10 +142,23 @@ const employeeTaurasPost = async (req = request, res = response) => {
     const documentosGenerados = [];
 
     // 1. Contrato laboral según tipo de contrato
-    const contratoNombre =
-      tipoContrato === 'Fijo'
-        ? 'contracts/1.CONTRATO_LABORAL_FIJO_2_MESES.docx'
-        : 'contracts/1.CONTRATO_LABORAL_indefinido.docx';
+    // const contratoNombre =
+    //   tipoContrato === 'Fijo'
+    //     ? 'contracts/1.CONTRATO_LABORAL_FIJO_2_MESES.docx'
+    //     : 'contracts/1.CONTRATO_LABORAL_indefinido.docx';
+    let contratoNombre = '';
+
+    if (tipoContrato === 'Indefinido') {
+      contratoNombre = 'contracts/1.CONTRATO_LABORAL_indefinido.docx';
+    } else if (tipoContrato === 'Fijo') {
+      if (duracionContratoMeses === 2) {
+        contratoNombre = 'contracts/1.CONTRATO_LABORAL_FIJO_2_MESES.docx';
+      } else if (duracionContratoMeses === 4) {
+        contratoNombre = 'contracts/1.CONTRATO_LABORAL_FIJO_4_MESES.docx';
+      } else {
+        contratoNombre = 'contracts/1.CONTRATO_LABORAL_FIJO_GENERIC.docx'; // fallback
+      }
+    }
 
     documentosGenerados.push(
       generateDocx(empleadoData, contratoNombre, 'contrato.docx', cedula)
@@ -307,12 +218,15 @@ const deleteEmployeeTauras = async (req = request, res = response) => {
   const { id } = req.params;
   const admin = req.userTauras; // viene del middleware validarJWT
 
+  const { descripcion, fechaEliminacion } = req.body; 
+
   const employee = await EmployeeTauras.findByIdAndUpdate(
     id,
-    {
+     {
       estado: false,
       eliminadoPor: admin._id,
-      fechaEliminacion: new Date(),
+     fechaEliminacion: fechaEliminacion ? new Date(fechaEliminacion) : new Date(),
+     descripcion,                                 // ← NUEVO
     },
     { new: true }
   );
@@ -323,10 +237,10 @@ const deleteEmployeeTauras = async (req = request, res = response) => {
     });
   }
 
-   // ✅ Generar documentos de retiro
+  // ✅ Generar documentos de retiro
   const docsRetiro = generateRetirementDocs(employee);
 
-   // ✅ Comprimir en ZIP
+  // ✅ Comprimir en ZIP
   let zipPath = '';
   try {
     zipPath = await zipRetirementDocs(employee.cedula.toString());
@@ -355,7 +269,9 @@ const downloadHiringZip = async (req, res = response) => {
     const zipPath = await zipHiringDocs(cedula);
 
     if (!fs.existsSync(zipPath)) {
-      return res.status(404).json({ msg: 'No se encontró el archivo .zip de contratación' });
+      return res
+        .status(404)
+        .json({ msg: 'No se encontró el archivo .zip de contratación' });
     }
 
     res.download(zipPath, `documentos_contratacion_${cedula}.zip`, (err) => {
@@ -364,10 +280,11 @@ const downloadHiringZip = async (req, res = response) => {
         res.status(500).json({ msg: 'Error al descargar el archivo' });
       }
     });
-
   } catch (error) {
     console.error('Error al generar ZIP de contratación:', error.message);
-    res.status(500).json({ msg: 'Error al generar el archivo ZIP', error: error.message });
+    res
+      .status(500)
+      .json({ msg: 'Error al generar el archivo ZIP', error: error.message });
   }
 };
 
@@ -376,7 +293,9 @@ const downloadFormatosGenerales = async (req, res = response) => {
     const zipPath = await zipDescargables();
 
     if (!fs.existsSync(zipPath)) {
-      return res.status(404).json({ msg: 'No se encontró el archivo .zip de formatos' });
+      return res
+        .status(404)
+        .json({ msg: 'No se encontró el archivo .zip de formatos' });
     }
 
     res.download(zipPath, 'formatos_descargables.zip', (err) => {
@@ -385,20 +304,22 @@ const downloadFormatosGenerales = async (req, res = response) => {
         res.status(500).json({ msg: 'Error al descargar los archivos' });
       }
     });
-
   } catch (error) {
     console.error('Error al generar ZIP de formatos:', error.message);
-    res.status(500).json({ msg: 'Error al generar el archivo ZIP', error: error.message });
+    res
+      .status(500)
+      .json({ msg: 'Error al generar el archivo ZIP', error: error.message });
   }
 };
 
 module.exports = {
   employeeGetTauras,
+  employeeGetRetiredTauras,
   employeeTaurasById,
   employeeTaurasPost,
   employeeTaurasPut,
   deleteEmployeeTauras,
   downloadRetirementZip,
   downloadHiringZip,
-  downloadFormatosGenerales
+  downloadFormatosGenerales,
 };

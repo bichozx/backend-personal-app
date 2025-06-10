@@ -100,6 +100,7 @@ const refreshToken = async (req, res = response) => {
       token: newToken,
       rol: user.rol,
       uid: user._id,
+      user:user
     });
   } catch (err) {
     console.error(err);
