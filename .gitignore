@@ -1,18 +1,25 @@
+# Node modules
 node_modules/
 
-
-logs/
-*.log
-
-
+# Archivos de entorno
 .env
 
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
+# Salidas temporales o generadas
+src/outputs/
+
+# Archivos de documentos generados (opcional)
+src/documents/Nueva carpeta/
+
+# Sistema operativo
 .DS_Store
+Thumbs.db
 
-
-*.swp
-*.swo
-
-
-/dist/
+# Archivos ZIP generados
+*.zip
