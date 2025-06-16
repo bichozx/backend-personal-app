@@ -18,8 +18,7 @@ const EmployeeTaurasSchema = Schema({
   },
   lugarDeExpedicion: {
     type: String,
-    required: [true, 'La cedula es obligatoria'],
-    unique: true,
+    required: [true, 'Lugar De Expedición es obligatorio'],
   },
   correo: {
     type: String,
@@ -42,6 +41,11 @@ const EmployeeTaurasSchema = Schema({
     type: String,
     required: [true, 'El salario es obligatorio'],
   },
+  salarioTexto: {
+  type: String,
+  
+  
+},
   tipoContrato: {
     type: String,
     required: true,
@@ -70,7 +74,7 @@ const EmployeeTaurasSchema = Schema({
   },
   fechaEliminacion: {
     type: Date,
-    default: null,
+    default: null
   },
   descripcion:{
     type:String,
@@ -81,6 +85,10 @@ const EmployeeTaurasSchema = Schema({
   type: Date,
   required: true,
   default: () => new Date(),
+},
+fechaIngresoTexto: {
+  type: String,
+  default: null,
 },
 });
 

@@ -11,6 +11,7 @@ const {
   downloadFormatosGenerales,
   employeeTaurasById,
   employeeGetRetiredTauras,
+  getProximosARetiro,
 } = require('../controller/employeeController');
 const {
   idCardExists,
@@ -25,6 +26,9 @@ const { isAdminRole, hasRole } = require('../middlewares/validate-Role');
 const router = express.Router();
 
 router.get('/', employeeGetTauras);
+
+router.get('/next-retired', getProximosARetiro);
+
 
 router.get('/retired', employeeGetRetiredTauras);
 
@@ -58,7 +62,7 @@ router.get('/:id',[
   check('id', 'No es un ID válido').isMongoId(),
 ], employeeTaurasById);
 
-router.put('/:id',[
+router.put('/update/:id',[
   (req, res, next) => {
         console.log('REQ.BODY:', req.body); 
         next();

@@ -1,9 +1,14 @@
 const { response, request } = require('express');
 const path = require('path');
+const moment = require('moment')
 
 const fs = require('fs');
 
 const EmployeeTauras = require('../models/EmployeeTauras');
+
+const conversor = require('conversor-numero-a-letras-es-ar');
+const Conversor = conversor.conversorNumerosALetras;
+const miConversor = new Conversor();
 
 const generateDocx = require('../services/contractGenerator');
 const generateRetirementDocs = require('../services/generateRetirementDocs');
@@ -12,6 +17,12 @@ const {
   zipHiringDocs,
   zipDescargables,
 } = require('../services/zipService');
+
+
+const meses = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
 
 const employeeGetTauras = async (req = request, res = response) => {
   const { limite = 5, desde = 0 } = req.query;
@@ -27,6 +38,41 @@ const employeeGetTauras = async (req = request, res = response) => {
     employeeTauras,
   });
 };
+
+
+const getProximosARetiro = async (req = request, res = response) => {
+  try {
+    const hoy = moment().startOf('day');
+    const dentroDe30Dias = moment().add(30, 'days').endOf('day');
+
+    const empleados = await EmployeeTauras.find({
+      estado: true,
+      fechaEliminacion: {
+        $gte: hoy.toDate(),
+        $lte: dentroDe30Dias.toDate(),
+      },
+    });
+
+    const proximos = empleados.map(emp => {
+      const fechaEliminacion = moment(emp.fechaEliminacion);
+      const diasRestantes = fechaEliminacion.diff(hoy, 'days');
+
+      return {
+        ...emp.toObject(),
+        diasRestantes,
+      };
+    });
+
+    res.json({
+      total: proximos.length,
+      proximos,
+    });
+  } catch (error) {
+    console.error('Error al obtener próximos a retiro:', error.message);
+    res.status(500).json({ msg: 'Error interno del servidor' });
+  }
+};
+
 
 const employeeGetRetiredTauras = async (req = request, res = response) => {
   const { limite = 5, desde = 0 } = req.query;
@@ -105,11 +151,28 @@ const employeeTaurasPost = async (req = request, res = response) => {
       duracionContratoMeses,
     } = req.body;
 
-    const fechaInicio = createdAt ? new Date(createdAt) : new Date();
+    // 1. Convertimos fechas
+    // const fechaInicio = createdAt ? new Date(createdAt) : new Date();
+    const fechaInicio = createdAt
+  ? moment(createdAt).startOf('day').toDate()
+  : moment().startOf('day').toDate();
     const fechaFinal = new Date(fechaInicio);
     fechaFinal.setMonth(
       fechaFinal.getMonth() + (Number(duracionContratoMeses) || 2)
     );
+
+      // 2. Salario en letras
+    const salarioNumero = parseInt(salario);
+    const salarioTexto = miConversor.convertToText(salarioNumero || 0);
+
+    // 3. Fecha de ingreso en letras
+    const dia = fechaInicio.getDate().toString().padStart(2, '0');
+    const mes = meses[fechaInicio.getMonth()];
+    const año = fechaInicio.getFullYear();
+   const diaEnLetras = miConversor.convertToText(Number(dia));
+
+    const fechaIngresoTexto = `${diaEnLetras.toUpperCase()} (${dia}) días del mes de ${mes} de ${año}`;
+
 
     const empleadoData = {
       nombre,
@@ -121,12 +184,14 @@ const employeeTaurasPost = async (req = request, res = response) => {
       celular,
       direccion,
       salario,
+      salarioTexto,
       tipoContrato,
       duracionContratoMeses,
       createdAt,
       fechaEliminacion,
-      fechaInicio: fechaInicio.toLocaleDateString('es-CO'),
-      fechaFinal: fechaFinal.toLocaleDateString('es-CO'),
+      fechaInicio,
+      fechaFinal,
+      fechaIngresoTexto,
       descripcion,
     };
 
@@ -134,6 +199,7 @@ const employeeTaurasPost = async (req = request, res = response) => {
       ...empleadoData,
       createdAt: fechaInicio,
       duracionContratoMeses,
+      
     });
 
     await newEmpleado.save();
@@ -166,9 +232,15 @@ const employeeTaurasPost = async (req = request, res = response) => {
 
     // 2. Generar todos los documentos necesarios de anexos
     const anexos = [
-      'anexos/3.ACUERDO_DE_CONFIDENCIALIDAD.docx',
+      'anexos/1.CONTRATO_MANEJO _Y _CONFIANZA.docx',
+      'anexos/1.CONTRATO_MANEJO_Y_CONFIANZA-TERMINO_FIJO.docx',
       'anexos/2.CLAUSULA_ADICIONAL_AL_CONTRATO.docx',
+      'anexos/2.CLAUSULA_ADICIONAL_AL_CONTRATO.docx',
+      'anexos/3.ACUERDO_DE_CONFIDENCIALIDAD.docx',
       'anexos/5.AVISO_DE_PRIVACIDAD_USO_FOTOGRAFIAS (2).docx',
+      'anexos/9.FORMATO_INDUCCION_GH_RIT_VERSION_2_JULIO_2024.docx',
+      'anexos/12.VERIFICACION_COBERTURA_EPS_Y_ACTUALIZACION_DE_DATOS_IPS.docx',
+      'anexos/13.MANEJO_DE_MONEDA_EXTRANJERA.docx',
     ];
 
     anexos.forEach((file) => {
@@ -191,27 +263,58 @@ const employeeTaurasPost = async (req = request, res = response) => {
     });
   }
 };
+
 const employeeTaurasPut = async (req = request, res = response) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
+    const { _id, nombre, apellido, cedula, salario, createdAt, ...resto } = req.body;
 
-  const { _id, nombre, apellido, cedula, ...resto } = req.body;
+    // Generar salarioTexto si hay salario nuevo
+    if (salario) {
+      resto.salario = salario;
+      resto.salarioTexto = miConversor.convertToText(Number(salario), {
+        plural: 'pesos',
+        singular: 'peso',
+        centPlural: 'centavos',
+        centSingular: 'centavo',
+      });
+    }
 
-  const employeeTaurasUpdate = await EmployeeTauras.findByIdAndUpdate(
-    id,
-    resto,
-    { new: true }
-  );
-  if (!employeeTaurasUpdate) {
-    return res.status(404).json({
-      msg: `No existe un empleado con el id ${id}`,
+    // Generar fechaIngresoTexto si se recibe createdAt
+    if (createdAt) {
+      const fechaInicio = new Date(createdAt);
+      const dia = fechaInicio.getDate().toString().padStart(2, '0');
+      const mesNombre = meses[fechaInicio.getMonth()];
+      const año = fechaInicio.getFullYear();
+      const diaEnLetras = miConversor.convertToText(dia);
+
+      resto.fechaIngresoTexto = `${diaEnLetras.toUpperCase()} (${dia}) días del mes de ${mesNombre} de ${año}`;
+    }
+
+    const employeeTaurasUpdate = await EmployeeTauras.findByIdAndUpdate(
+      id,
+      resto,
+      { new: true }
+    );
+
+    if (!employeeTaurasUpdate) {
+      return res.status(404).json({
+        msg: `No existe un empleado con el id ${id}`,
+      });
+    }
+
+    res.json({
+      msg: 'Empleado actualizado',
+      id,
+      employeeTaurasUpdate,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      msg: 'Error al actualizar el empleado',
+      error: error.message,
     });
   }
-
-  res.json({
-    msg: 'put Api',
-    id,
-    employeeTaurasUpdate,
-  });
 };
 
 const deleteEmployeeTauras = async (req = request, res = response) => {
@@ -314,6 +417,7 @@ const downloadFormatosGenerales = async (req, res = response) => {
 
 module.exports = {
   employeeGetTauras,
+  getProximosARetiro,
   employeeGetRetiredTauras,
   employeeTaurasById,
   employeeTaurasPost,
