@@ -1,6 +1,6 @@
 const { response, request } = require('express');
 const path = require('path');
-const moment = require('moment')
+const moment = require('moment');
 
 const fs = require('fs');
 
@@ -17,11 +17,21 @@ const {
   zipHiringDocs,
   zipDescargables,
 } = require('../services/zipService');
-
+const { formattDate } = require('../../utils/formattDate');
 
 const meses = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
 ];
 
 const employeeGetTauras = async (req = request, res = response) => {
@@ -39,7 +49,6 @@ const employeeGetTauras = async (req = request, res = response) => {
   });
 };
 
-
 const getProximosARetiro = async (req = request, res = response) => {
   try {
     const hoy = moment().startOf('day');
@@ -53,7 +62,7 @@ const getProximosARetiro = async (req = request, res = response) => {
       },
     });
 
-    const proximos = empleados.map(emp => {
+    const proximos = empleados.map((emp) => {
       const fechaEliminacion = moment(emp.fechaEliminacion);
       const diasRestantes = fechaEliminacion.diff(hoy, 'days');
 
@@ -72,7 +81,6 @@ const getProximosARetiro = async (req = request, res = response) => {
     res.status(500).json({ msg: 'Error interno del servidor' });
   }
 };
-
 
 const employeeGetRetiredTauras = async (req = request, res = response) => {
   const { limite = 5, desde = 0 } = req.query;
@@ -154,14 +162,17 @@ const employeeTaurasPost = async (req = request, res = response) => {
     // 1. Convertimos fechas
     // const fechaInicio = createdAt ? new Date(createdAt) : new Date();
     const fechaInicio = createdAt
-  ? moment(createdAt).startOf('day').toDate()
-  : moment().startOf('day').toDate();
-    const fechaFinal = new Date(fechaInicio);
-    fechaFinal.setMonth(
-      fechaFinal.getMonth() + (Number(duracionContratoMeses) || 2)
-    );
+      ? moment(createdAt, 'YYYY-MM-DD').startOf('day').toDate()
+      : moment().startOf('day').toDate();
+    // const fechaFinal = new Date(fechaInicio);
+    // fechaFinal.setMonth(
+    //   fechaFinal.getMonth() + (Number(duracionContratoMeses) || 2)
+    // );
+     const fechaFin = fechaEliminacion
+      ? moment(fechaEliminacion, 'YYYY-MM-DD').startOf('day').toDate()
+      : null;
 
-      // 2. Salario en letras
+    // 2. Salario en letras
     const salarioNumero = parseInt(salario);
     const salarioTexto = miConversor.convertToText(salarioNumero || 0);
 
@@ -169,10 +180,14 @@ const employeeTaurasPost = async (req = request, res = response) => {
     const dia = fechaInicio.getDate().toString().padStart(2, '0');
     const mes = meses[fechaInicio.getMonth()];
     const año = fechaInicio.getFullYear();
-   const diaEnLetras = miConversor.convertToText(Number(dia));
+    const diaEnLetras = miConversor.convertToText(Number(dia));
 
     const fechaIngresoTexto = `${diaEnLetras.toUpperCase()} (${dia}) días del mes de ${mes} de ${año}`;
 
+    // const fechaInicioTexto = formattDate(fechaInicio);
+    // const fechaFinalTexto = formattDate(fechaEliminacion);
+    const fechaInicioTexto = formattDate(fechaInicio);
+    const fechaFinalTexto = fechaFin ? formattDate(fechaFin) : '';
 
     const empleadoData = {
       nombre,
@@ -187,19 +202,20 @@ const employeeTaurasPost = async (req = request, res = response) => {
       salarioTexto,
       tipoContrato,
       duracionContratoMeses,
-      createdAt,
-      fechaEliminacion,
+      createdAt: fechaInicio,
+      fechaInicioTexto,
+      fechaEliminacion: fechaFin,
+      fechaFinalTexto,
       fechaInicio,
-      fechaFinal,
+      // fechaFinal,
       fechaIngresoTexto,
       descripcion,
     };
 
     const newEmpleado = new EmployeeTauras({
       ...empleadoData,
-      createdAt: fechaInicio,
-      duracionContratoMeses,
-      
+      // createdAt: fechaInicio,
+      // duracionContratoMeses,
     });
 
     await newEmpleado.save();
@@ -267,7 +283,8 @@ const employeeTaurasPost = async (req = request, res = response) => {
 const employeeTaurasPut = async (req = request, res = response) => {
   try {
     const { id } = req.params;
-    const { _id, nombre, apellido, cedula, salario, createdAt, ...resto } = req.body;
+    const { _id, nombre, apellido, cedula, salario, createdAt, ...resto } =
+      req.body;
 
     // Generar salarioTexto si hay salario nuevo
     if (salario) {
@@ -282,11 +299,12 @@ const employeeTaurasPut = async (req = request, res = response) => {
 
     // Generar fechaIngresoTexto si se recibe createdAt
     if (createdAt) {
-      const fechaInicio = new Date(createdAt);
+      const fechaInicio = moment(createdAt, 'YYYY-MM-DD').toDate();
       const dia = fechaInicio.getDate().toString().padStart(2, '0');
       const mesNombre = meses[fechaInicio.getMonth()];
       const año = fechaInicio.getFullYear();
       const diaEnLetras = miConversor.convertToText(dia);
+      
 
       resto.fechaIngresoTexto = `${diaEnLetras.toUpperCase()} (${dia}) días del mes de ${mesNombre} de ${año}`;
     }
@@ -321,15 +339,19 @@ const deleteEmployeeTauras = async (req = request, res = response) => {
   const { id } = req.params;
   const admin = req.userTauras; // viene del middleware validarJWT
 
-  const { descripcion, fechaEliminacion } = req.body; 
+  const { descripcion, fechaEliminacion } = req.body;
+
+    const fechaEliminacionParsed = fechaEliminacion
+    ? moment(fechaEliminacion, 'YYYY-MM-DD').startOf('day').toDate()
+    : new Date();
 
   const employee = await EmployeeTauras.findByIdAndUpdate(
     id,
-     {
+    {
       estado: false,
       eliminadoPor: admin._id,
-     fechaEliminacion: fechaEliminacion ? new Date(fechaEliminacion) : new Date(),
-     descripcion,                                 // ← NUEVO
+      fechaEliminacion: fechaEliminacionParsed,
+      descripcion, // ← NUEVO
     },
     { new: true }
   );

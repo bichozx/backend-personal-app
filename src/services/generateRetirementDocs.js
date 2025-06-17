@@ -1,20 +1,32 @@
 const path = require('path');
 const generateDocx = require('./contractGenerator');
+const { formattDate } = require('../../utils/formattDate');
 
 
 const generateRetirementDocs = (empleado) => {
   const carpetaEmpleado = path.join(empleado.cedula.toString(), 'retiro');
 
+  // const data = {
+  //   nombre: empleado.nombre,
+  //   apellido: empleado.apellido,
+  //   cedula: empleado.cedula,
+  //   cargo: empleado.cargo,
+  //   correo: empleado.correo,
+  //   fechaInicio: new Date(empleado.createdAt ?? new Date()).toLocaleDateString('es-CO'),
+  //   fechaEliminacion: new Date().toLocaleDateString('es-CO'),
+  //   salario: empleado.salario,
+  // };
   const data = {
-    nombre: empleado.nombre,
-    apellido: empleado.apellido,
-    cedula: empleado.cedula,
-    cargo: empleado.cargo,
-    correo: empleado.correo,
-    fechaInicio: new Date(empleado.createdAt ?? new Date()).toLocaleDateString('es-CO'),
-    fechaEliminacion: new Date().toLocaleDateString('es-CO'),
-    salario: empleado.salario,
-  };
+  nombre: empleado.nombre,
+  apellido: empleado.apellido,
+  cedula: empleado.cedula,
+  cargo: empleado.cargo,
+  correo: empleado.correo,
+  fechaInicioTexto: formattDate(empleado.createdAt ?? new Date()),
+  fechaEliminacionTexto: formattDate(new Date()),
+  salario: empleado.salario,
+};
+
 
   const docsRetiro = [
     'retiro/1FORMATO_CARTA_ACEPTACION_DE_RENUNCIA_JUNIO_2024.docx',
